@@ -1,0 +1,11 @@
+<div style="display: flex;justify-content: center;">
+    {% if articles_list %}
+    <ul>
+        {% for art in articles_list %}
+        <li><a href="{% url 'blogs:detail' art.id 123 %}">{{ art.title }}</a></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No articles.</p>
+    {% endif %}
+</div>
