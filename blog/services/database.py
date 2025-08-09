@@ -62,7 +62,9 @@ class DatabaseService:
                 TOTAL_VIEWS_KEY: view.article.total_views,
                 UNIQUE_VISITORS_KEY: view.article.unique_visitors,
             }
-            user_view_count[view.user.id] = view.view_count
+            user_view_count.setdefault(view.user.id, {})[
+                view.article.id
+            ] = view.view_count
         return {
             "articles": articles,
             "user_view_count": user_view_count,
