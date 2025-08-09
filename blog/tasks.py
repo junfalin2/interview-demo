@@ -39,12 +39,11 @@ def sync_articles_to_db():
         to_update = []
         for uid, art_viewcount in data.items():
             for aid, viewcount in art_viewcount.items():
-                obj, created = UserArticleViews.objects.get_or_create(
-                    user_id=uid, article_id=aid, view_count=viewcount
+                obj, _ = UserArticleViews.objects.get_or_create(
+                    user_id=uid, article_id=aid
                 )
-                if created:
-                    obj.view_count = viewcount
-                    to_update.append(obj)
+                obj.view_count = viewcount
+                to_update.append(obj)
 
         UserArticleViews.objects.bulk_update(
             to_update, [VIEW_COUNT_KEY], batch_size=1000
