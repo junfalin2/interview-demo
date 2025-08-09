@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_q',
     "blog.apps.BlogConfig",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -105,7 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
@@ -130,6 +131,7 @@ CACHES = {
         'LOCATION': 'redis://127.0.0.1:6379/1',  # Redis 地址和数据库编号
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'DECODE_RESPONSES': True
         }
     }
 }
@@ -138,3 +140,20 @@ CACHES = {
 REDIS_HOST = '127.0.0.1'
 REDIS_PORT = 6379
 REDIS_DB = 1
+
+Q_CLUSTER = {
+    'name': 'blog_view',
+    'workers': 4,
+    'recycle': 500,
+    'timeout': 60,
+    'save_limit': 250,
+    'queue_limit': 500,
+    'retry': 120,  # 失败后 120 秒后重试（默认最多重试 3 次）
+    'ack_failures': True,  # 记录失败任务
+    'orm': 'default',  # 使用数据库作为 Broker（持久化）✅
+    # 'redis': {
+    #     'host': '127.0.0.1',
+    #     'port': 6379,
+    #     'db': 0,
+    # }
+}
