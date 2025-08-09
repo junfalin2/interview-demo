@@ -19,6 +19,7 @@ def create_schedule(sender, **kwargs):
     from django_q.models import Schedule
 
     Schedule.objects.get_or_create(
+        name="sync_articles_to_db",
         func="blog.tasks.sync_articles_to_db",
         schedule_type=Schedule.MINUTES,
         minutes=1,

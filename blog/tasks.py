@@ -9,6 +9,7 @@ from django.db import transaction, models
 
 import logging
 
+from blog.services.database import DatabaseService
 from blog.services.redis import RedisService
 
 logger = logging.getLogger(__name__)
@@ -48,5 +49,14 @@ def sync_articles_to_db():
         UserArticleViews.objects.bulk_update(
             to_update, [VIEW_COUNT_KEY], batch_size=1000
         )
+    except Exception as e:
+        raise e
+
+
+def update_view_count(article_id,user_id):
+    """增加阅读次数"""
+    try:
+        DatabaseService.increment_user_view(user_id, article_id)
+        DatabaseService.increment_total_views(article_id)
     except Exception as e:
         raise e

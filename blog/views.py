@@ -1,11 +1,12 @@
-import json
 import traceback
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseServerError
+from django_q.tasks import async_task
 
-from blog.models import Articles, UserArticleViews, User
+from blog.models import Articles, User
 from blog.services.database import DatabaseService
 from blog.services.redis import RedisService
+from blog.tasks import update_view_count
 
 # Create your views here.
 
@@ -20,7 +21,7 @@ def index(request):
 # @params user_id 应该由session 或 jwt 校验后获取
 def detail(request, article_id, user_id):
     """文章详情页"""
-    #TODO 幂等校验
+    # TODO 幂等校验
     article = get_object_or_404(Articles, pk=article_id)
     user = get_object_or_404(User, pk=user_id)
     try:
@@ -32,8 +33,9 @@ def detail(request, article_id, user_id):
         traceback.print_exc()
         print("降级处理,直接存储数据库")
         try:
-            DatabaseService.increment_total_views(article_id)
-            DatabaseService.increment_user_view(user_id, article_id)
+            async_task(
+                update_view_count,article_id,user_id, task_name="increment_user_view_and_total_views"
+            )
         except Exception as e:
             # TODO 记录日志, 防止数据丢失
             return HttpResponseServerError(e)
@@ -50,7 +52,7 @@ def statistics(request):
         traceback.print_exc()
         print("降级处理,直接读取数据库")
         try:
-            data =DatabaseService.get_statistics()
+            data = DatabaseService.get_statistics()
             return JsonResponse(data, safe=False)
         except Exception as e:
             # TODO 记录日志
