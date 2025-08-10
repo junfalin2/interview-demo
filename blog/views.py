@@ -9,6 +9,7 @@ from blog.exceptions.database import DatabaseError
 from blog.exceptions.redis import CacheError
 from blog.models import Articles, User
 from blog.services.database import DatabaseService
+from blog.services.metrics import MetricsService
 from blog.services.redis import RedisService
 from blog.services.worker import Worker
 from blog.tasks import update_view_count
@@ -48,8 +49,10 @@ def detail(request, article_id, user_id):
 
     # 缓存未命中或解析失败：从数据库获取并更新缓存
     if article is None:
+        MetricsService.record_api_request(served_by_cache=False)
         article = _get_article_from_db()
     try:
+        MetricsService.record_api_request(served_by_cache=True)
         cache = RedisService()
         cache.set_article_content(article_id, article)
         cache.increment_total_views(article_id)
@@ -74,7 +77,6 @@ def detail(request, article_id, user_id):
                     "user_id": user_id,
                 },
             )
-
     return render(request, "blog/detail.html", {"article": article})
 
 
@@ -95,3 +97,10 @@ def statistics(request):
             # TODO 记录日志
             logger.error(f"{e}")
     return JsonResponse(data)
+
+
+def metrics(request):
+    metrics = MetricsService.get_metrics()
+    cache = RedisService()
+    d = cache.get_redis_hit_rate()
+    return JsonResponse({"metrics": metrics, "redis": d})

@@ -5,6 +5,7 @@ from django_redis import get_redis_connection
 
 from blog.exceptions.redis import redis_catch
 from blog.models import UNIQUE_VISITORS_KEY, TOTAL_VIEWS_KEY, VIEW_COUNT_KEY
+from blog.services.metrics import MetricsService
 
 STATISTICS_ARTICLE_KEY = "statistics:article:{article_id}"
 
@@ -74,7 +75,6 @@ class RedisService:
         data = {}
         # 获取所有或指定id的key
         keys = self.get_keys(STATISTICS_ARTICLE_KEY.format(article_id=article_id))
-        print(keys)
         with self.conn.pipeline() as pipe:
             for k in keys:
                 pipe.hgetall(k)
@@ -134,6 +134,7 @@ class RedisService:
                 article = json.loads(cached_article)
             except json.JSONDecodeError as e:
                 article = None
+        MetricsService.record_cache_op(hit=article is not None)
         return article
 
     @redis_catch
@@ -239,3 +240,18 @@ class RedisService:
                         )  # 加回旧值
                 pipe.execute()
             raise e
+
+    @redis_catch
+    def get_redis_hit_rate(self):
+        """获取 Redis 全局缓存命中率"""
+        stats = self.conn.info("stats")
+
+        hits = stats.get("keyspace_hits", 0)
+        misses = stats.get("keyspace_misses", 0)
+        total = hits + misses
+
+        if total == 0:
+            return 0.0
+
+        hit_rate = (hits / total) * 100
+        return {"hits": hits, "misses": misses, "rate": round(hit_rate, 2)}
