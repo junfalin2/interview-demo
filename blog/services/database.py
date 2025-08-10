@@ -1,3 +1,4 @@
+from blog.exceptions.database import db_catch
 from blog.models import (
     UserArticleViews,
     Articles,
@@ -10,6 +11,7 @@ from django.db import transaction, models
 
 class DatabaseService:
     @classmethod
+    @db_catch
     def increment_unique_visitors(cls, article_id):
         """增加用户人次"""
         try:
@@ -21,6 +23,7 @@ class DatabaseService:
             raise e
 
     @classmethod
+    @db_catch
     def increment_total_views(cls, article_id):
         """增加总阅读量"""
         try:
@@ -32,6 +35,7 @@ class DatabaseService:
             raise e
 
     @classmethod
+    @db_catch
     def increment_user_view(cls, user_id, article_id):
         """增加用户阅读某文章次数"""
         try:
@@ -50,6 +54,7 @@ class DatabaseService:
             raise e
 
     @classmethod
+    @db_catch
     def get_statistics(
         cls,
     ):
