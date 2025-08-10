@@ -5,7 +5,7 @@ from blog.models import (
     UNIQUE_VISITORS_KEY,
     VIEW_COUNT_KEY,
 )
-from django.db import transaction, models
+from django.db import models
 import traceback
 
 import logging
@@ -26,16 +26,11 @@ def sync_articles_to_db():
             articles = Articles.objects.filter(id__in=article_ids)
 
             for article in articles:
-                article.total_views = (
-                    models.F(TOTAL_VIEWS_KEY) + data[article.id]
-                )
-            Articles.objects.bulk_update(
-                articles, [TOTAL_VIEWS_KEY], batch_size=1000
-            )
+                article.total_views = models.F(TOTAL_VIEWS_KEY) + data[article.id]
+            Articles.objects.bulk_update(articles, [TOTAL_VIEWS_KEY], batch_size=1000)
     except Exception as e:
         traceback.print_exc()
         raise e
-
 
     try:
         # 用户次数
@@ -54,7 +49,6 @@ def sync_articles_to_db():
     except Exception as e:
         traceback.print_exc()
         raise e
-    
 
     try:
         # 用户阅读文章次数
@@ -84,5 +78,23 @@ def update_view_count(article_id, user_id):
     try:
         DatabaseService.increment_user_view(user_id, article_id)
         DatabaseService.increment_total_views(article_id)
+    except Exception as e:
+        raise e
+
+
+def warm_up_cache():
+    """预加载热点数据"""
+    try:
+        cache = RedisService()
+        hot_articles = Articles.objects.filter(is_hot=True)[:100]
+        for article in hot_articles:
+            cache.set_article_content(
+                article.id,
+                {
+                    "title": article.title,
+                    "content": article.content,
+                    "pub_date": article.pub_date.strftime("%Y-%m-%d"),
+                },
+            )
     except Exception as e:
         raise e

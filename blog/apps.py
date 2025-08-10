@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate
 from django.dispatch import receiver
@@ -23,4 +24,15 @@ def create_schedule(sender, **kwargs):
         func="blog.tasks.sync_articles_to_db",
         schedule_type=Schedule.MINUTES,
         minutes=1,
+    )
+
+    # 模拟低峰时期或者冷启动时加载
+    Schedule.objects.get_or_create(
+        name="warm_up_cache",
+        func="blog.tasks.warm_up_cache",
+        schedule_type=Schedule.DAILY,
+        repeats=-1,  # 永久重复
+        next_run=datetime.now().replace(
+            hour=2, minute=0, second=0, microsecond=0
+        ),  # 凌晨2点
     )

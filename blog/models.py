@@ -17,6 +17,7 @@ class Articles(models.Model):
     )
     unique_visitors = models.IntegerField("用户人次", default=0)
     pub_date = models.DateTimeField("发布日期", auto_now_add=True)
+    is_hot = models.BooleanField("热门文章",default=False)
 
     def __str__(self):
         return self.title
